@@ -1,4 +1,4 @@
-.PHONY: dirs all clean
+.PHONY: dirs downloads all clean
 
 ifdef OS
    RM = rmdir /s /q
@@ -15,7 +15,10 @@ dirs:
 	
 	@echo Data directories created.
 
-all: dirs
+downloads:
+	gdown 1DFsAF4MED8ZUKhio79yeiC0zhvB4j-Oq -O ./data/knapsack-instance.txt
+
+all: dirs downloads
 	echo All done.
 
 clean:
