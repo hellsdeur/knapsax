@@ -5,11 +5,11 @@ Aplicação de metaheurísticas ao problema da mochila, para disciplina de Metah
 
 1. Crie um ambiente virtual para o projeto.
 
-1.1. Usando Poetry.
+- Usando Poetry.
 
 ```poetry install```
 
-1.2. Usando pip.
+- Usando pip.
 
 ```python -m venv env```
 
