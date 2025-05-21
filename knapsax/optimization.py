@@ -46,7 +46,8 @@ class Solution:
 
     def generate_solution(self):
 
-        shuffled_items = random.shuffle(self.knapsack.items, len(self.knapsack.items))
+        shuffled_items = self.knapsack.items.copy()
+        random.shuffle(shuffled_items)
 
         while self.total_weight <= self.knapsack.capacity and len(shuffled_items) > 0:
             item = shuffled_items.pop(0)
@@ -55,7 +56,7 @@ class Solution:
                 self.total_value += item.value
                 self.total_weight += item.weight
                 self.n_items += 1
-                shuffled_items = random.shuffle(self.knapsack.items, len(shuffled_items))
+                random.shuffle(self.knapsack.items)
             else:
                 break
 
