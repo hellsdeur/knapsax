@@ -36,32 +36,23 @@ class Knapsack:
 
 
 class Solution:
-    def __init__(self, knapsack: Knapsack):
-        self.knapsack: Knapsack = knapsack
-        self.x: List[Item] = []
-        self.n_items: int = 0
-        self.total_value: int = 0
-        self.total_weight: int = 0
-        self.generate_solution()
+    def __init__(self, knapsack):
+        self.knapsack = knapsack
+        self.items = []
+        self.total_weight = 0
+        self.total_value = 0
 
-    def generate_solution(self):
-
-        shuffled_items = self.knapsack.items.copy()
-        random.shuffle(shuffled_items)
-
-        while self.total_weight <= self.knapsack.capacity and len(shuffled_items) > 0:
-            item = shuffled_items.pop(0)
-            if self.total_weight + item.weight <= self.knapsack.capacity:
-                self.x.append(item)
-                self.total_value += item.value
-                self.total_weight += item.weight
-                self.n_items += 1
-                random.shuffle(self.knapsack.items)
-            else:
-                break
+    def add_item(self, item_index):
+        item = self.knapsack.items[item_index]
+        if self.total_weight + item.weight <= self.knapsack.capacity:
+            self.items.append(item_index)
+            self.total_weight += item.weight
+            self.total_value += item.value
+            return True
+        return False
 
     def __repr__(self):
-        return f"Solution(value={self.total_value}, weight={self.total_weight}, n_items={self.n_items})"
+        return (f"Solution(value={self.total_value}, weight={self.total_weight}, items={self.items})")
 
 
 class Problem(Protocol):
