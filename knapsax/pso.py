@@ -2,15 +2,14 @@ from knapsax.populational import Populational
 import numpy as np
 
 
-class PSO(Populational):
-    def __init__(self, population_size: int, knapsack, weights, values, capacity):
-        super().__init__(population_size, knapsack)
-
-        self.weights = weights
-        self.values = values
-        self.capacity = capacity
-        self.num_items = len(weights)
-
+class Particula:
+    def __init__(self, knapsack):
+        self.knapsack = knapsack
+        self.weights = [item.weight for item in knapsack.items]
+        self.values = [item.value for item in knapsack.items]
+        self.capacity = knapsack.capacity
+        self.num_items = len(self.weights)
+        
         self.position = self.generate_feasible_position()
         self.velocity = np.random.uniform(-1, 1, size=self.num_items)
 
@@ -46,14 +45,17 @@ class PSO(Populational):
         self.position = np.where(np.random.rand(self.num_items) < prob, 1, 0)
 
 
-class PSO_knapsack:
-    def __init__(self, weights, values, capacity, num_particles=100, max_evals=20000,
+class PSO:
+    def __init__(self, n_interations, knapsack, num_particles=100, max_evals=20000,
                  inertia=1.0, c1=0.5, c2=0.5, min_velocity=4, max_velocity=4):
+        self.knapsack = knapsack
 
-        self.weights = weights
-        self.values = values
-        self.capacity = capacity
-        num_itens = len(weights)
+        self.n_interations = n_interations
+
+        self.weights = [item.weight for item in knapsack.items]
+        self.values = [item.value for item in knapsack.items]
+        self.capacity = knapsack.capacity
+        self.num_items = len(self.weights)
 
         self.num_particles = num_particles
         self.max_evals = max_evals
@@ -63,20 +65,22 @@ class PSO_knapsack:
         self.min_velocity = min_velocity
         self.max_velocity = max_velocity
 
-        self.history = []
-
+        self.history_value = []
+        self.history_weight = []
+    
     def run(self):
-        swarm = [PSO(self.weights, self.values, self.capacity) for _ in range(self.num_particles)]
+        swarm = [Particula(self.knapsack) for _ in range(self.num_particles)]
         global_best = swarm[0].best_position.copy()
         global_best_fitness = swarm[0].best_fitness
 
-        evals = self.num_particles
-        self.history.append(global_best_fitness)
+        evals = 0
+        self.history_value = [global_best_fitness]
+        self.history_weight = [np.sum(global_best * self.weights)]
 
-        while evals < self.max_evals:
+        for _ in range(self.n_interations):
             for particle in swarm:
-                particle.update_velocity(global_best, self.inertia, self.c1, self.c2, self.min_velocity,
-                                         self.max_velocity)
+                particle.update_velocity(global_best, self.inertia, self.c1, self.c2,
+                                        self.min_velocity, self.max_velocity)
                 particle.update_position()
                 fitness = particle.evaluate()
                 evals += 1
@@ -89,7 +93,21 @@ class PSO_knapsack:
                     global_best_fitness = fitness
                     global_best = particle.position.copy()
 
+                if evals % self.num_particles == 0:
+                    self.history_value.append(global_best_fitness)
+                    self.history_weight.append(np.sum(global_best * self.weights))
+
                 if evals >= self.max_evals:
                     break
-            self.history.append(global_best_fitness)
-        return global_best, global_best_fitness, self.history
+
+        # >>> AQUI: converte a solução final no mesmo formato do ACO <<<
+        selected_items = []
+        for i in range(self.num_items):
+            if global_best[i] == 1:
+                selected_items.append(self.knapsack.items[i])
+
+        total_value = sum(item.value for item in selected_items)
+        total_weight = sum(item.weight for item in selected_items)
+
+        return selected_items, total_value, total_weight
+
