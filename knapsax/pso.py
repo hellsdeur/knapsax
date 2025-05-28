@@ -1,4 +1,3 @@
-from knapsax.populational import Populational
 import numpy as np
 
 
@@ -46,11 +45,11 @@ class Particula:
 
 
 class PSO:
-    def __init__(self, n_interations, knapsack, num_particles=100, max_evals=20000,
-                 inertia=1.0, c1=0.5, c2=0.5, min_velocity=4, max_velocity=4):
+    def __init__(self, knapsack, num_particles=100, max_evals=20000,
+                 inertia=0.7, c1=0.5, c2=0.3, min_velocity=4, max_velocity=4, n_iterations=100):
+        
         self.knapsack = knapsack
-
-        self.n_interations = n_interations
+        self.n_iterations = n_iterations
 
         self.weights = [item.weight for item in knapsack.items]
         self.values = [item.value for item in knapsack.items]
@@ -73,17 +72,15 @@ class PSO:
         global_best = swarm[0].best_position.copy()
         global_best_fitness = swarm[0].best_fitness
 
-        evals = 0
         self.history_value = [global_best_fitness]
         self.history_weight = [np.sum(global_best * self.weights)]
 
-        for _ in range(self.n_interations):
+        for _ in range(self.n_iterations):
             for particle in swarm:
                 particle.update_velocity(global_best, self.inertia, self.c1, self.c2,
                                         self.min_velocity, self.max_velocity)
                 particle.update_position()
                 fitness = particle.evaluate()
-                evals += 1
 
                 if fitness > particle.best_fitness:
                     particle.best_fitness = fitness
@@ -93,21 +90,26 @@ class PSO:
                     global_best_fitness = fitness
                     global_best = particle.position.copy()
 
-                if evals % self.num_particles == 0:
-                    self.history_value.append(global_best_fitness)
-                    self.history_weight.append(np.sum(global_best * self.weights))
+            self.history_value.append(global_best_fitness)
+            self.history_weight.append(np.sum(global_best * self.weights))
 
-                if evals >= self.max_evals:
-                    break
-
-        # >>> AQUI: converte a solução final no mesmo formato do ACO <<<
-        selected_items = []
-        for i in range(self.num_items):
-            if global_best[i] == 1:
-                selected_items.append(self.knapsack.items[i])
-
+        selected_items = [self.knapsack.items[i] for i in range(self.num_items) if global_best[i] == 1]
         total_value = sum(item.value for item in selected_items)
         total_weight = sum(item.weight for item in selected_items)
 
         return selected_items, total_value, total_weight
 
+
+    #     # >>> AQUI: converte a solução final no mesmo formato do ACO <<<
+    #     return self._format_solution(global_best)
+
+    # def _format_solution(self, solution):
+    #     selected_items = []
+    #     for i in range(self.num_items):
+    #         if solution[i] == 1:
+    #             selected_items.append(self.knapsack.items[i])
+
+    #     total_value = sum(item.value for item in selected_items)
+    #     total_weight = sum(item.weight for item in selected_items)
+
+    #     return selected_items, total_value, total_weight
