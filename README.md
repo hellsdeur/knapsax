@@ -22,3 +22,35 @@ Aplicação de metaheurísticas ao problema da mochila, para disciplina de Metah
 ```make all```
 
 3. Realize ou consulte os experimentos no diretório `notebooks`, e os códigos-fonte no diretório `knapsack`.
+
+# Colaboradores
+
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="#" title="defina o título do link">
+        <img src="https://avatars.githubusercontent.com/u/17325561?v=4" width="100px;" alt="Foto do Helder Matos no GitHub"/><br>
+        <sub>
+          <b>Helder Matos</b>
+        </sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="#" title="defina o título do link">
+        <img src="https://avatars.githubusercontent.com/u/73586340?v=4" width="100px;" alt="Foto do Jean Carlos no GitHub"/><br>
+        <sub>
+          <b>Jean Carlos</b>
+        </sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="#" title="defina o título do link">
+        <img src="https://avatars.githubusercontent.com/u/31627212?v=4" width="100px;" alt="Foto do Joaquim Viana no GitHub"/><br>
+        <sub>
+          <b>Joaquim Viana</b>
+        </sub>
+      </a>
+    </td>
+  </tr>
+</table>
