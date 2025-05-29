@@ -98,18 +98,3 @@ class PSO:
         total_weight = sum(item.weight for item in selected_items)
 
         return selected_items, total_value, total_weight
-
-
-    #     # >>> AQUI: converte a solução final no mesmo formato do ACO <<<
-    #     return self._format_solution(global_best)
-
-    # def _format_solution(self, solution):
-    #     selected_items = []
-    #     for i in range(self.num_items):
-    #         if solution[i] == 1:
-    #             selected_items.append(self.knapsack.items[i])
-
-    #     total_value = sum(item.value for item in selected_items)
-    #     total_weight = sum(item.weight for item in selected_items)
-
-    #     return selected_items, total_value, total_weight
