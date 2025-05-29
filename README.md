@@ -25,11 +25,10 @@ Aplicação de metaheurísticas ao problema da mochila, para disciplina de Metah
 
 # Colaboradores
 
-
 <table>
   <tr>
     <td align="center">
-      <a href="#" title="defina o título do link">
+      <a href="https://github.com/hellsdeur" title="defina o título do link">
         <img src="https://avatars.githubusercontent.com/u/17325561?v=4" width="100px;" alt="Foto do Helder Matos no GitHub"/><br>
         <sub>
           <b>Helder Matos</b>
@@ -37,7 +36,7 @@ Aplicação de metaheurísticas ao problema da mochila, para disciplina de Metah
       </a>
     </td>
     <td align="center">
-      <a href="#" title="defina o título do link">
+      <a href="https://github.com/jeancarloscc" title="defina o título do link">
         <img src="https://avatars.githubusercontent.com/u/73586340?v=4" width="100px;" alt="Foto do Jean Carlos no GitHub"/><br>
         <sub>
           <b>Jean Carlos</b>
@@ -45,7 +44,7 @@ Aplicação de metaheurísticas ao problema da mochila, para disciplina de Metah
       </a>
     </td>
     <td align="center">
-      <a href="#" title="defina o título do link">
+      <a href="https://github.com/jvianna07" title="defina o título do link">
         <img src="https://avatars.githubusercontent.com/u/31627212?v=4" width="100px;" alt="Foto do Joaquim Viana no GitHub"/><br>
         <sub>
           <b>Joaquim Viana</b>
