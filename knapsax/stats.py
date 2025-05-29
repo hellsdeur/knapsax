@@ -1,16 +1,18 @@
 import time
-from tqdm import tqdm
 import tracemalloc
-
-import numpy as np
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from tqdm import tqdm
+from multiprocessing import Pool, cpu_count
 
 class Stats:
-    def __init__(self, n_runs: int, algorithm_instance: object):
+    def __init__(self, n_runs: int, algorithm_class, *args, **kwargs):
         self.n_runs = n_runs
-        self.algorithm_instance = algorithm_instance
+        self.algorithm_class = algorithm_class
+        self.args = args
+        self.kwargs = kwargs
         self.data = {
             "iteration": [],
             "best_solution": [],
@@ -23,29 +25,38 @@ class Stats:
             "memory_peak_mb": [],
         }
 
+    def _run_single(self, run_index):
+        start_time = time.time()
+        tracemalloc.start()
+        instance = self.algorithm_class(*self.args, **self.kwargs)
+        best_solution, best_value, best_weight = instance.run()
+        current, peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+        end_time = time.time()
+
+        return {
+            "iteration": run_index,
+            "best_solution": best_solution,
+            "best_value": best_value,
+            "best_weight": best_weight,
+            "history_value": instance.history_value,
+            "history_weight": instance.history_weight,
+            "execution_time": end_time - start_time,
+            "memory_peak": peak,
+            "memory_peak_mb": peak / 10**6,
+        }
+
     def run(self):
+        with Pool(cpu_count()) as pool:
+            results = list(tqdm(pool.imap(self._run_single, range(self.n_runs)), total=self.n_runs, desc=f"Running {self.algorithm_class.__name__}", unit="run"))
 
-        for i in tqdm(range(self.n_runs), desc=f"Running {self.algorithm_instance.__class__}", unit="run"):
-            start_time = time.time()
-            tracemalloc.start()
-            best_solution, best_value, best_weight = self.algorithm_instance.run()
-            current, peak = tracemalloc.get_traced_memory()
-            tracemalloc.stop()
-            end_time = time.time()
-
-            self.data["iteration"].append(i)
-            self.data["best_solution"].append(best_solution)
-            self.data["best_value"].append(best_value)
-            self.data["best_weight"].append(best_weight)
-            self.data["history_value"].append(self.algorithm_instance.history_value)
-            self.data["history_weight"].append(self.algorithm_instance.history_weight)
-            self.data["execution_time"].append(end_time - start_time)
-            self.data["memory_peak"].append(peak)
-            self.data["memory_peak_mb"].append(peak / 10**6)
+        for entry in results:
+            for key in self.data:
+                self.data[key].append(entry[key])
 
     def frame(self):
         return pd.DataFrame(self.data)
-    
+
     def plot_convergence(self, title: str, savefig: str = None):
         df = self.frame()
 
@@ -84,7 +95,6 @@ class Stats:
             label=f"Valor máximo = {max_value}"
         )
 
-        ax.set_title(title, fontsize=20)
         ax.set_xlabel("Iteração", fontsize=16)
         ax.set_ylabel("Valor", fontsize=16)
         ax.tick_params(axis='both', which='major', labelsize=12)
@@ -94,6 +104,5 @@ class Stats:
 
         if savefig:
             plt.savefig(savefig, dpi=600)
-        
+
         return fig, ax
-    
