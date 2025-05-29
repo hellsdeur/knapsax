@@ -1,34 +1,15 @@
 import numpy as np
+from typing import List
+
+from knapsax.optimization import Item, Knapsack
 
 
 class ACOSolution:
-    def __init__(self, knapsack, pheromone_vector, alpha=1, beta=1):
-        self.knapsack = knapsack
-        self.pheromone_vector = pheromone_vector
-        self.alpha = alpha
-        self.beta = beta
-        self.items = np.zeros(knapsack.n_items, dtype=int)
-        self.total_weight = 0
-        self.total_value = 0
-
-    def generate_solution(self):
-        for index in range(self.knapsack.n_items):
-            if np.random.rand() < 0.5:
-                self.items[index] = 1
-
-        self._update_value_and_weight()
-
-    def _update_value_and_weight(self):
-        self.total_weight = 0
-        self.total_value = 0
-        for idx, included in enumerate(self.items):
-            if included:
-                item = self.knapsack.items[idx]
-                self.total_weight += item.weight
-                self.total_value += item.value
-
-    def evaluate(self):
-        return self.total_weight <= self.knapsack.capacity
+    def __init__(self, path, items: List[Item]):
+        self.path = path
+        self.items = items
+        self.total_weight = sum(items[i].weight for i in path)
+        self.total_value = sum(items[i].value for i in path)
 
     def __repr__(self):
         included_items = [idx for idx, val in enumerate(self.items) if val == 1]
@@ -36,60 +17,90 @@ class ACOSolution:
 
 
 class ACO:
-    def __init__(self, knapsack, n_ants, n_best, n_iterations, decay, alpha=1, beta=1):
-        self.knapsack = knapsack
-        self.n_items = knapsack.n_items
-        self.pheromone_vector = np.ones(self.n_items) / self.n_items
+    def __init__(self, n_ants, decay, pheromone_intensity, n_iterations, n_best, knapsack: Knapsack, alpha=1.0, beta=0.0):
         self.n_ants = n_ants
-        self.n_best = n_best
-        self.n_iterations = n_iterations
         self.decay = decay
+        self.pheromone_intensity = pheromone_intensity
+        self.n_iterations = n_iterations
+        self.n_best = n_best
         self.alpha = alpha
         self.beta = beta
-
+        self.knapsack = knapsack
+        self.items = sorted(knapsack.items, key=lambda item: item.weight)
+        self.nbr_items = len(self.items)
+        self.pheromones = np.ones((self.nbr_items,), dtype=np.float32)
+        self.heuristics = np.array([item.value / item.weight if item.weight > 0 else 0 for item in self.items], dtype=np.float32)
+        self.global_best_values = np.zeros((self.n_iterations,), dtype=np.float32)
+        self.global_best_solution = None
         self.history_value = []
         self.history_weight = []
 
     def reset(self):
-        self.pheromone = np.ones(self.n_items) / self.n_items
         self.history_value = []
         self.history_weight = []
 
     def run(self):
         self.reset()
-        best_solution = None
+        for generation in range(self.n_iterations):
+            solutions = []
+            fitness = np.zeros((self.n_ants,), dtype=np.uint16)
 
-        for _ in range(self.n_iterations):
-            all_solutions = self.generate_all_solutions()
-            self.spread_pheromone(all_solutions)
+            for ant in range(self.n_ants):
+                path = self.construct_solution()
+                solution = ACOSolution(path, self.items)
+                solutions.append(solution)
+                fitness[ant] = solution.total_value
 
-            for solution in all_solutions:
-                if solution.evaluate():
-                    if best_solution is None or solution.total_value > best_solution.total_value:
-                        best_solution = solution
+            generation_max = np.max(fitness)
+            index = np.argmax(fitness)
 
-            self.history_value.append(best_solution.total_value if best_solution else 0)
-            self.history_weight.append(best_solution.total_weight if best_solution else 0)
+            if generation == 0 or generation_max >= self.global_best_values[generation - 1]:
+                self.global_best_values[generation] = generation_max
+                self.global_best_solution = solutions[index]
+            else:
+                self.global_best_values[generation] = self.global_best_values[generation - 1]
 
-            self.pheromone_vector *= self.decay
+            self.history_value.append(self.global_best_solution.total_value)
+            self.history_weight.append(self.global_best_solution.total_weight)
 
-        if best_solution:
-            return best_solution.items, best_solution.total_value, best_solution.total_weight
-        else:
-            return np.zeros(self.n_items, dtype=int), 0, 0
+            self.update_pheromones(solutions, fitness)
 
-    def spread_pheromone(self, all_solutions):
-        sorted_solutions = sorted([s for s in all_solutions if s.evaluate()], key=lambda s: s.total_value, reverse=True)
-        for solution in sorted_solutions[:self.n_best]:
-            for item_index, included in enumerate(solution.items):
-                if included:
-                    self.pheromone_vector[item_index] += solution.total_value / sum(item.value for item in self.knapsack.items)
+        return self.global_best_values.astype(np.uint16), self.global_best_solution.total_value, self.global_best_solution.total_weight
 
-    def generate_all_solutions(self):
-        return [self.generate_single_solution() for _ in range(self.n_ants)]
+    def construct_solution(self):
+        available = np.ones((self.nbr_items,), dtype=bool)
+        ant_path = np.zeros(self.nbr_items, dtype=np.uint8)
+        path_node = 0
+        sum_weight = 0.0
 
-    def generate_single_solution(self):
-        solution = ACOSolution(self.knapsack, self.pheromone_vector, self.alpha, self.beta)
-        solution.generate_solution()
-        return solution
-    
+        while np.any(available):
+            probabilities = np.zeros_like(self.pheromones)
+            for i in range(self.nbr_items):
+                if available[i]:
+                    probabilities[i] = (self.pheromones[i] ** self.alpha) * (self.heuristics[i] ** self.beta)
+
+            total = np.sum(probabilities)
+            if total == 0:
+                break
+
+            probabilities /= total
+            item_index = np.random.choice(self.nbr_items, p=probabilities)
+
+            ant_path[path_node] = item_index
+            path_node += 1
+            sum_weight += self.items[item_index].weight
+
+            available[item_index] = False
+            for i in range(self.nbr_items):
+                if self.items[i].weight > (self.knapsack.capacity - sum_weight):
+                    available[i] = False
+
+        return ant_path[:path_node]
+
+    def update_pheromones(self, solutions, fitness):
+        self.pheromones *= self.decay
+        added_pheromones = lambda fit: self.pheromone_intensity * float(fit)
+        sorted_indices = np.argsort(fitness)
+        top_indexes = sorted_indices[-self.n_best:]
+        for i in top_indexes:
+            self.pheromones[solutions[i].path] += added_pheromones(fitness[i])
