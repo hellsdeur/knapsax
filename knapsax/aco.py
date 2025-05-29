@@ -14,7 +14,7 @@ class ACOSolution(Solution):
         available_items = set(range(self.knapsack.n_items))
 
         while available_items:
-            probabilities = self._compute_probabilities(available_items)
+            probabilities = self.compute_probabilities(available_items)
 
             if probabilities.sum() == 0 or len(available_items) == 0:
                 break
@@ -24,7 +24,7 @@ class ACOSolution(Solution):
             self.add_item(item_index)
             available_items.remove(item_index)
 
-    def _compute_probabilities(self, available_items):
+    def compute_probabilities(self, available_items):
         pheromone = np.array([self.pheromone_vector[i] for i in available_items])
         heuristic = np.array([self.knapsack.items[i].value / self.knapsack.items[i].weight for i in available_items])
         scores = (pheromone ** self.alpha) * (heuristic ** self.beta)
@@ -49,7 +49,13 @@ class ACO:
         self.history_value = []
         self.history_weight = []
 
+    def reset(self):
+        self.pheromone = np.ones(self.n_items) / self.n_items
+        self.history_value = []
+        self.history_weight = []
+
     def run(self):
+        self.reset()
         best_solution = None
 
         for _ in range(self.n_iterations):
