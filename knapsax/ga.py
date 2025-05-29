@@ -6,16 +6,20 @@
 
 import numpy as np
 
+from knapsax.optimization import Knapsack
+
 class AGenetico:
-    def __init__(self, dados: np.ndarray, nr_geracoes: int, **kwargs)-> None: 
+    def __init__(self, knapsack: Knapsack, nr_geracoes: int, **kwargs)-> None: 
 
         # DADOS 
-        self.valor_item = dados[:, 0] 
-        self.peso_item = dados[:, -1]
+        self.knapsack = knapsack
+        self.valor_item = np.array([item.value for item in knapsack.items])
+        self.peso_item = np.array([item.weight for item in knapsack.items])
+
         
         # VARIAVEIS
         self.NR_GERACOES = nr_geracoes #Nr de geracoes
-        self.QTY_CROMOSSOMOS = len(self.valor_item) # Qty de cromossomos
+        self.QTY_CROMOSSOMOS = len(knapsack.items) # Qty de cromossomos
         self.TAXA_MUTACAO = kwargs.get("taxa_mutacao", 0.05) # Taxa de mutacao
         self.TAXA_CROMOSSOMOS = kwargs.get("taxa_cromossomos", 0.1)
         self.CAPACIDADE_MAX = kwargs.get("capacidade_max", 1550) # Capacidade máx da mochila
@@ -36,6 +40,10 @@ class AGenetico:
         # Criar array vazio para populacao 
         self.populacao = np.empty((self.TAM_MIN_POP,
                 self.QTY_CROMOSSOMOS))
+        
+        self.best_solution = None
+        self.history_value = []
+        self.history_weight = []
    
         # MELHOR SOLUCAO
         self.melhor_sol = {
@@ -160,7 +168,7 @@ class AGenetico:
         self.melhor_sol["sol_testadas"].append(pop_geracao)
      
        
-    def solucionar(self) -> np.ndarray:
+    def run(self) -> np.ndarray:
         self.resetar_variaveis()
         self.gerar_populacao_inicial(self.TAM_MIN_POP)
         self.gerar_filhos(self.POP_POR_GERACOES[0])
@@ -189,4 +197,6 @@ class AGenetico:
             self.atualizar_melhor_sol(
             geracao, pop
             )
-        
+        self.history_value = self.melhor_sol["valor_max"]
+        self.history_weight = self.melhor_sol["custo_max"]
+        return self.melhor_sol["solucao"][-1], self.melhor_sol["valor_max"][-1], self.melhor_sol["custo_max"][-1]
